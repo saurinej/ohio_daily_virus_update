@@ -96,7 +96,7 @@ public static void main(String[] args) {
 		};
 		
 		//sets delay and starts task to send email every day at 2:05pm according to local time
-		long delay = ChronoUnit.SECONDS.between(LocalTime.now(), LocalTime.of(15, 28, 00));
+		long delay = ChronoUnit.SECONDS.between(LocalTime.now(), LocalTime.of(14, 05, 00));
 		scheduler.scheduleAtFixedRate(task, delay, 86400, TimeUnit.SECONDS);
 		//user may terminate program by entering 1
 		Scanner in = new Scanner(System.in);
