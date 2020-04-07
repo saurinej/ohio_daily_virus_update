@@ -1,7 +1,8 @@
 # Ohio Daily Virus Update
 
 A simple project with the purpose of providing daily updates on the number of confirmed cases of COVID-19 in Ohio through email. Data is gathered
-from the Ohio government's website through direct parsing form an HTML file. Data is then formatted and sent through an email using the Java Mail API.
+from the Ohio government's website through direct parsing from a link to a CSV file that contains the data for all cases in Ohio. Data is then 
+formatted and sent through an email using the Java Mail API.
 
 ### Prerequisites
 
