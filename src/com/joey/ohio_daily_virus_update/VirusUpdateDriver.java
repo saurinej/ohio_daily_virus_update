@@ -2,23 +2,26 @@ package com.joey.ohio_daily_virus_update;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
@@ -39,32 +42,37 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 public class VirusUpdateDriver {
-public static void main(String[] args) {
+	
+	private static TreeMap<GregorianCalendar, TreeMap<String, County>> dataByDay = new TreeMap<>(new CustomGregorianCalendarComparator());
+	private static ArrayList<SingleDayCount> previousVersionData = new ArrayList<>();
+	
+	public static void main(String[] args) {
 		
-		TreeMap<Date, Integer> time = new TreeMap<>();
 		
+		TreeMap<GregorianCalendar, TreeMap<String, County>> dataByDaySerialized = null;
+		ArrayList<SingleDayCount>previousDataSerialized = null;
 		
-		//read in data from "tracker_data.txt" file
-		try {
-			BufferedReader input = new BufferedReader(new FileReader("tracker_data.txt"));
-			String dateValuePair = input.readLine();
-			while (dateValuePair != null) {
-				String[] array = dateValuePair.split("~");
-				DateFormat formatter = new SimpleDateFormat("ddMMMyyyy");;
-				Date parsedDate = formatter.parse(array[0].trim());
-				int cases = Integer.parseInt(array[1].trim());
-				time.put(parsedDate, cases);
-				dateValuePair = input.readLine();
-			}
-			System.out.println("Successfully parsed data.");
-			input.close();
+		//creates input stream for County_Data_Over_Time.dat file
+		try{
+			//read in new version data
+			ObjectInputStream in = new ObjectInputStream(new FileInputStream("County_Data_Over_Time.dat"));
+			dataByDaySerialized = (TreeMap<GregorianCalendar, TreeMap<String, County>>)(in.readObject());
+			previousDataSerialized = (ArrayList<SingleDayCount>)(in.readObject());
+			in.close();
 		} catch (FileNotFoundException e) {
-			System.err.println("\"tracker_data.txt\" file not found. Will not send data for previous days before this date.");
-			e.printStackTrace();
+			System.err.println("Could not open the file \"County_Data_Over_Time.dat\"");
 		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ParseException e) {
-			e.printStackTrace();
+			System.err.println("Could not de-serialize the object");
+		} catch (ClassNotFoundException e) {
+			System.err.println("Could not cast the de-serialized object");
+		}
+		
+		if(dataByDaySerialized != null) {
+			dataByDay = dataByDaySerialized;
+		}
+		
+		if(previousDataSerialized != null) {
+			previousVersionData = previousDataSerialized;
 		}
 		
 		//task to run once a day at 2:05 pm after website updates
@@ -73,25 +81,57 @@ public static void main(String[] args) {
 			@Override
 			public void run() {
 				//create date and get case number for this specific day
-				DateFormat dateFormat = new SimpleDateFormat("ddMMMyyyy HH:mm:ss");
-				Date date = new Date();
-				int cases = getCases();
-				time.put(date, cases);
-				String subject = "Ohio Virus Update: " + dateFormat.format(date);
+				DateFormat dateFormat = new SimpleDateFormat("ddMMMyyyy");
+				GregorianCalendar date = new GregorianCalendar();
+				
+				TreeMap<String, County> currentData = getDataFromCSV();
+				dataByDay.put(date, currentData);
+				
+				
+				String subject = "Ohio Virus Update: " + dateFormat.format(date.getTime());
 				
 				//build body of email with data
 				StringBuilder body = new StringBuilder();
-				body.append("Date | Confirmed Cases in Ohio");
-				for (Map.Entry<Date, Integer> entry: time.entrySet()) {
-					body.append("\n" + dateFormat.format(entry.getKey()) + " | " + entry.getValue());
+				int previousDayCount = 0;
+				for (SingleDayCount d: previousVersionData) {
+					body.append(dateFormat.format(d.getDate().getTime()) + ":\n");
+					int currentDayCount = d.getCaseCount();
+					if (previousDayCount == 0) {
+						body.append("\tTotal Count: " + currentDayCount + "\n");
+					} else {
+						int newCases = currentDayCount - previousDayCount;
+						body.append("\tTotal Count: " + currentDayCount + " (" + newCases + ")" + "\n");
+					}
+					previousDayCount = currentDayCount;
+				}
+				for (Map.Entry<GregorianCalendar, TreeMap<String, County>> entry: dataByDay.entrySet()) {
+					body.append(dateFormat.format(entry.getKey().getTime()) + ":\n");
+					
+					//get specific county count
+					int countyCount = entry.getValue().get("Montgomery").getCount();
+					body.append("\tMontgomery Count: " + countyCount + "\n");
+					
+					//get total case count for a single reporting day
+					int totalCount = 0;
+					for (Map.Entry<String, County> subentry: entry.getValue().entrySet()) {
+						totalCount += subentry.getValue().getCount();
+					}
+					if (previousDayCount == 0) {
+						body.append("\tTotal Count: " + totalCount + "\n");
+					} else {
+						int newCases = totalCount - previousDayCount;
+						body.append("\tTotal Count: " + totalCount + " (" + newCases + ")" + "\n");
+					}
+					
+					previousDayCount = totalCount;
 				}
 				//initialize email parameters and send email
 				String emailFrom = "XXXXXXXX@gmail.com";
 				String password = "YYYYYYYYYY";
 				String emailTo = "ZZZZZZZZZ@gmail.com";
-				sendEmail(subject, body.toString(), emailFrom, password, emailTo);
-				
-				System.out.println("Email sent successfully on " + dateFormat.format(date) + ". Enter \"1\" to terminate.");
+				//sendEmail(subject, body.toString(), emailFrom, password, emailTo);
+				System.out.println(body.toString());
+				System.out.println("Email sent successfully on " + dateFormat.format(date.getTime()) + ". Enter \"1\" to terminate.");
 			}
 		};
 		
@@ -101,15 +141,125 @@ public static void main(String[] args) {
 		//user may terminate program by entering 1
 		Scanner in = new Scanner(System.in);
 		if (in.nextInt() == 1) {
-			List<Runnable> list = scheduler.shutdownNow();
-			System.out.println(list.toString());
+			scheduler.shutdownNow();
 			in.close();
 			//writes new data to file
-			exit(time);
+			try {
+				ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("County_Data_Over_Time.dat"));
+				out.writeObject(dataByDay);
+				out.writeObject(previousVersionData);
+				out.close();
+			} catch (FileNotFoundException e) {
+				System.err.println("Could not create the file \"County_Data_Over_Time.dat\"");
+			} catch (IOException e) {
+				System.err.println("Could not serialize the object");
+			}
+			System.out.println("Goodbye!");
 			System.exit(0);
 		}
 	}
 	
+	//returns collection of data stored by county
+	private static TreeMap<String, County> getDataFromCSV() {
+		
+		TreeMap<String, County> currentDayData = new TreeMap<>();
+		
+		try {
+			//open URL connection and create BufferedReader to read the input stream for the CSV file
+			URL urlCSV = new URL("https://coronavirus.ohio.gov/static/COVIDSummaryData.csv");
+			URLConnection connection = urlCSV.openConnection();
+			BufferedReader inputCSV = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			
+			/*
+			 * CSV file formatted as follows:
+			 * first row: column titles
+			 * data: county, sex, age range, onset date, death date, case count, death count, hospitalized count
+			 * last row: totals
+			 * so we must ignore the first and last lines during data collection from the CSV file
+			 */
+			
+			//first line read first so the title row is not stored
+			String line = inputCSV.readLine();
+			while((line = inputCSV.readLine()) != null) {
+				String[] s = line.split(",");
+				String countyName = s[0];
+				//following if statement skips the last row for the totals
+				if (countyName.contains("Grand Total")) {
+					break;
+				}
+				String sex = s[1];
+				String ageRange = s[2];
+				String onsetDate = s[3];
+				String deathDate = s[4];
+				int count = Integer.parseInt(s[5]);
+				int deathCount = Integer.parseInt(s[6]);
+				int hospitalizedCount = Integer.parseInt(s[7]);
+				CaseInstance newCase = new CaseInstance(sex, ageRange, onsetDate, deathDate, count, deathCount, hospitalizedCount);
+				if (currentDayData.containsKey(countyName)) {
+					currentDayData.get(countyName).addCaseInstance(newCase);
+				} else {
+					County newCounty = new County(countyName);
+					newCounty.addCaseInstance(newCase);
+					currentDayData.put(countyName, newCounty);
+				}
+			}
+			
+			inputCSV.close();
+			
+			
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return currentDayData;
+		
+	}
+	
+	//sends email according to entered parameters
+	private static void sendEmail(String subject, String body, String emailFrom, String password, String emailTo) {
+		//set properties 
+		Properties props = new Properties();
+		props.put("mail.smtp.auth", "true");
+		props.put("mail.smtp.starttls.enable", "true");
+		props.put("mail.smtp.host", "smtp.gmail.com");
+		props.put("mail.smtp.port", "587");
+		props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+		props.put("mail.debug.auth", true);
+		props.put("mail.debug", true);
+		
+		//create session
+		Session session = Session.getInstance(props, new Authenticator() {
+			@Override
+			protected PasswordAuthentication getPasswordAuthentication() {
+				return new PasswordAuthentication(emailFrom, password);
+			}
+		});
+		
+		//create message
+		Message message = new MimeMessage(session);
+		try {
+			message.setFrom(new InternetAddress(emailFrom));
+			message.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
+			message.setSubject(subject);
+			message.setText(body);
+		} catch (AddressException e) {
+			e.printStackTrace();
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+		
+		//message transport
+		try {
+			Transport.send(message);
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	@Deprecated
 	//returns daily case data as integer from coronavirus.ohio.gov
 	private static int getCases() {
 		URL url = null;
@@ -168,48 +318,7 @@ public static void main(String[] args) {
 		return cases;
 	}
 	
-	//sends email according to entered parameters
-	private static void sendEmail(String subject, String body, String emailFrom, String password, String emailTo) {
-		//set properties 
-		Properties props = new Properties();
-		props.put("mail.smtp.auth", "true");
-		props.put("mail.smtp.starttls.enable", "true");
-		props.put("mail.smtp.host", "smtp.gmail.com");
-		props.put("mail.smtp.port", "587");
-		props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
-		props.put("mail.debug.auth", true);
-		props.put("mail.debug", true);
-		
-		//create session
-		Session session = Session.getInstance(props, new Authenticator() {
-			@Override
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(emailFrom, password);
-			}
-		});
-		
-		//create message
-		Message message = new MimeMessage(session);
-		try {
-			message.setFrom(new InternetAddress(emailFrom));
-			message.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
-			message.setSubject(subject);
-			message.setText(body);
-		} catch (AddressException e) {
-			e.printStackTrace();
-		} catch (MessagingException e) {
-			e.printStackTrace();
-		}
-		
-		//message transport
-		try {
-			Transport.send(message);
-		} catch (MessagingException e) {
-			e.printStackTrace();
-		}
-		
-	}
-	
+	@Deprecated
 	//writes data to "tracker_data.txt" file according to format "ddMMMyyy~#"
 	private static void exit(TreeMap<Date, Integer> map) {
 		

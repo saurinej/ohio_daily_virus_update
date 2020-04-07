@@ -12,6 +12,10 @@ and the JavaBeans Activation Framework version 1.1.1., found [here](https://www.
 Note, for the gmail account used to send the emails, "Less secure app access" will likely need to be turned on for this program to work. This can be 
 done in the relevant google account [security settings](https://myaccount.google.com/security).
 
+## Getting Started
+
+
+
 ## Authors
 
 * **Joseph Saurine** - *Initial work* - (https://github.com/saurinej)
