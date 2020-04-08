@@ -45,6 +45,7 @@ public class VirusUpdateDriver {
 	
 	private static TreeMap<GregorianCalendar, TreeMap<String, County>> dataByDay = new TreeMap<>(new CustomGregorianCalendarComparator());
 	private static ArrayList<SingleDayCount> previousVersionData = new ArrayList<>();
+	private static ArrayList<LogItem> log = new ArrayList<>();
 	
 	private static String emailFrom;
 	private static String password;
@@ -134,10 +135,17 @@ public class VirusUpdateDriver {
 					
 					previousDayCount = totalCount;
 				}
+				
+				//initialize the log item
+				LogItem entry = new LogItem(date, body.toString());
+				
 				//pass the email parameters to the email method
-				sendEmail(subject, body.toString(), emailFrom, password, emailTo);
+				//sendEmail(subject, body.toString(), emailFrom, password, emailTo, entry);
 				//System.out.println(body.toString());
 				System.out.println("Email sent successfully on " + dateFormat.format(date.getTime()) + ". Enter \"1\" to terminate.");
+				
+				//add log entry to log
+				log.add(entry);
 			}
 		};
 		
@@ -149,27 +157,32 @@ public class VirusUpdateDriver {
 		//change menu to accept new features
 		int menuOption = 0;
 		while (menuOption != 1) {
-			System.out.println("Menu\n1 - Quit\n2 - Show log\n3 - Update email information\n4Choose data to send\n5 - Update data"
-					+ "\n6 - Print email body example");
+			System.out.println("Menu\n1 - Quit\n2 - Show log\n3 - Update email information\n4 - Choose data to send\n5 - Update data"
+					+ "\n6 - Print last email body");
 			menuOption = in.nextInt();
 			if (menuOption == 2) {
-				
+				System.out.println("-----------Log-----------");
+				for (LogItem l: log) {
+					System.out.println(l.toString());
+				}
+				System.out.println("-----------End Log-----------");
 			} else if (menuOption == 3) {
 				updateEmailInformation();
 			} else if (menuOption == 4) {
-				
+				//list counties for county option
 			} else if (menuOption == 5) {
 				GregorianCalendar date = new GregorianCalendar();
 				TreeMap<String, County> currentData = getDataFromCSV();
 				dataByDay.put(date, currentData);
 				System.out.println("Update successful");
 			} else if (menuOption == 6) {
-				
+				System.out.println(log.get(log.size() - 1).getBody());
 			} else if (menuOption < 1 || menuOption > 6) {
 				System.out.println("Please enter a valid menu option.");
 			}
 		} //end while loop
 		
+		//exit procedure: shutdown scheduler, close scanner object, write data to file
 		if (menuOption == 1) {
 			scheduler.shutdownNow();
 			in.close();
@@ -189,18 +202,20 @@ public class VirusUpdateDriver {
 		}
 	}
 	
+	
+	
 	private static void updateEmailInformation() {
 		//Gather email information from user
 		boolean verify = true;
 		while (verify) {
 			//Console console = System.console();
 			System.out.println("Please enter the email address that will send the emails: ");
-			emailFrom = in.next();
+			emailFrom = in.next().trim();
 			System.out.println("Please type the password for this email (note: less secure app access will likely need to be turned "
 					+ "on in the google account settings): ");
-			password = in.next();
+			password = in.next().trim();
 			System.out.println("Please enter the email address that will receive the emails: ");
-			emailTo = in.next();
+			emailTo = in.next().trim();
 			
 			System.out.println("Would you like to verify the information? (Y/n)");
 			if (in.next().toLowerCase().contains("y")) {
@@ -274,6 +289,53 @@ public class VirusUpdateDriver {
 		
 	}
 	
+	//sends email according to entered parameters
+	private static void sendEmail(String subject, String body, String emailFrom, String password, String emailTo, LogItem log) {
+		//set properties 
+		Properties props = new Properties();
+		props.put("mail.smtp.auth", "true");
+		props.put("mail.smtp.starttls.enable", "true");
+		props.put("mail.smtp.host", "smtp.gmail.com");
+		props.put("mail.smtp.port", "587");
+		props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+		props.put("mail.debug.auth", true);
+		props.put("mail.debug", true);
+		
+		//create session
+		Session session = Session.getInstance(props, new Authenticator() {
+			@Override
+			protected PasswordAuthentication getPasswordAuthentication() {
+				return new PasswordAuthentication(emailFrom, password);
+			}
+		});
+		
+		//create message
+		Message message = new MimeMessage(session);
+		try {
+			message.setFrom(new InternetAddress(emailFrom));
+			message.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
+			message.setSubject(subject);
+			message.setText(body);
+		} catch (AddressException e) {
+			e.printStackTrace();
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+		
+		//message transport
+		try {
+			Transport.send(message);
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+		
+		log.setBody(body);
+		log.setMessage((MimeMessage)message);
+		log.setSession(session);
+		log.setSendSuccessful(true);
+		
+	}
+	
 	@Deprecated
 	//returns daily case data as integer from coronavirus.ohio.gov
 	private static int getCases() {
@@ -333,48 +395,6 @@ public class VirusUpdateDriver {
 		return cases;
 	}
 	
-	//sends email according to entered parameters
-	private static void sendEmail(String subject, String body, String emailFrom, String password, String emailTo) {
-		//set properties 
-		Properties props = new Properties();
-		props.put("mail.smtp.auth", "true");
-		props.put("mail.smtp.starttls.enable", "true");
-		props.put("mail.smtp.host", "smtp.gmail.com");
-		props.put("mail.smtp.port", "587");
-		props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
-		props.put("mail.debug.auth", true);
-		props.put("mail.debug", true);
-		
-		//create session
-		Session session = Session.getInstance(props, new Authenticator() {
-			@Override
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(emailFrom, password);
-			}
-		});
-		
-		//create message
-		Message message = new MimeMessage(session);
-		try {
-			message.setFrom(new InternetAddress(emailFrom));
-			message.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
-			message.setSubject(subject);
-			message.setText(body);
-		} catch (AddressException e) {
-			e.printStackTrace();
-		} catch (MessagingException e) {
-			e.printStackTrace();
-		}
-		
-		//message transport
-		try {
-			Transport.send(message);
-		} catch (MessagingException e) {
-			e.printStackTrace();
-		}
-		
-	}
-	
 	@Deprecated
 	//writes data to "tracker_data.txt" file according to format "ddMMMyyy~#"
 	private static void exit(TreeMap<Date, Integer> map) {
@@ -392,5 +412,5 @@ public class VirusUpdateDriver {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
+	}	
 }
