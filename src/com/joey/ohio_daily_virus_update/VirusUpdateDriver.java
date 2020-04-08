@@ -46,6 +46,12 @@ public class VirusUpdateDriver {
 	private static TreeMap<GregorianCalendar, TreeMap<String, County>> dataByDay = new TreeMap<>(new CustomGregorianCalendarComparator());
 	private static ArrayList<SingleDayCount> previousVersionData = new ArrayList<>();
 	
+	private static String emailFrom;
+	private static String password;
+	private static String emailTo;
+	
+	private static Scanner in = new Scanner(System.in);
+	
 	public static void main(String[] args) {
 		
 		
@@ -67,13 +73,16 @@ public class VirusUpdateDriver {
 			System.err.println("Could not cast the de-serialized object");
 		}
 		
+		//following lines initialize static variables to equal the serialized variables if they were success
 		if(dataByDaySerialized != null) {
 			dataByDay = dataByDaySerialized;
 		}
-		
 		if(previousDataSerialized != null) {
 			previousVersionData = previousDataSerialized;
 		}
+		
+		//Gather email information from user
+		updateEmailInformation();
 		
 		//task to run once a day at 2:05 pm after website updates
 		ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -125,12 +134,9 @@ public class VirusUpdateDriver {
 					
 					previousDayCount = totalCount;
 				}
-				//initialize email parameters and send email
-				String emailFrom = "XXXXXXXX@gmail.com";
-				String password = "YYYYYYYYYY";
-				String emailTo = "ZZZZZZZZZ@gmail.com";
-				//sendEmail(subject, body.toString(), emailFrom, password, emailTo);
-				System.out.println(body.toString());
+				//pass the email parameters to the email method
+				sendEmail(subject, body.toString(), emailFrom, password, emailTo);
+				//System.out.println(body.toString());
 				System.out.println("Email sent successfully on " + dateFormat.format(date.getTime()) + ". Enter \"1\" to terminate.");
 			}
 		};
@@ -138,9 +144,33 @@ public class VirusUpdateDriver {
 		//sets delay and starts task to send email every day at 2:05pm according to local time
 		long delay = ChronoUnit.SECONDS.between(LocalTime.now(), LocalTime.of(14, 05, 00));
 		scheduler.scheduleAtFixedRate(task, delay, 86400, TimeUnit.SECONDS);
-		//user may terminate program by entering 1
-		Scanner in = new Scanner(System.in);
-		if (in.nextInt() == 1) {
+		//user input for varying options
+		
+		//change menu to accept new features
+		int menuOption = 0;
+		while (menuOption != 1) {
+			System.out.println("Menu\n1 - Quit\n2 - Show log\n3 - Update email information\n4Choose data to send\n5 - Update data"
+					+ "\n6 - Print email body example");
+			menuOption = in.nextInt();
+			if (menuOption == 2) {
+				
+			} else if (menuOption == 3) {
+				updateEmailInformation();
+			} else if (menuOption == 4) {
+				
+			} else if (menuOption == 5) {
+				GregorianCalendar date = new GregorianCalendar();
+				TreeMap<String, County> currentData = getDataFromCSV();
+				dataByDay.put(date, currentData);
+				System.out.println("Update successful");
+			} else if (menuOption == 6) {
+				
+			} else if (menuOption < 1 || menuOption > 6) {
+				System.out.println("Please enter a valid menu option.");
+			}
+		} //end while loop
+		
+		if (menuOption == 1) {
 			scheduler.shutdownNow();
 			in.close();
 			//writes new data to file
@@ -157,6 +187,33 @@ public class VirusUpdateDriver {
 			System.out.println("Goodbye!");
 			System.exit(0);
 		}
+	}
+	
+	private static void updateEmailInformation() {
+		//Gather email information from user
+		boolean verify = true;
+		while (verify) {
+			//Console console = System.console();
+			System.out.println("Please enter the email address that will send the emails: ");
+			emailFrom = in.next();
+			System.out.println("Please type the password for this email (note: less secure app access will likely need to be turned "
+					+ "on in the google account settings): ");
+			password = in.next();
+			System.out.println("Please enter the email address that will receive the emails: ");
+			emailTo = in.next();
+			
+			System.out.println("Would you like to verify the information? (Y/n)");
+			if (in.next().toLowerCase().contains("y")) {
+				System.out.print("\nIs the following information correct? \nEmail address that will send the emails: " 
+					+ emailFrom + "\nPassword: " + password + "\nEmail address that will receive the emails: "
+					+ emailTo + "\n(Y/n)");
+				if (in.next().toLowerCase().contains("y")) {
+					verify = false;
+				}
+			} else {
+				verify = false;
+			}
+		} //end while loop
 	}
 	
 	//returns collection of data stored by county
@@ -217,48 +274,6 @@ public class VirusUpdateDriver {
 		
 	}
 	
-	//sends email according to entered parameters
-	private static void sendEmail(String subject, String body, String emailFrom, String password, String emailTo) {
-		//set properties 
-		Properties props = new Properties();
-		props.put("mail.smtp.auth", "true");
-		props.put("mail.smtp.starttls.enable", "true");
-		props.put("mail.smtp.host", "smtp.gmail.com");
-		props.put("mail.smtp.port", "587");
-		props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
-		props.put("mail.debug.auth", true);
-		props.put("mail.debug", true);
-		
-		//create session
-		Session session = Session.getInstance(props, new Authenticator() {
-			@Override
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(emailFrom, password);
-			}
-		});
-		
-		//create message
-		Message message = new MimeMessage(session);
-		try {
-			message.setFrom(new InternetAddress(emailFrom));
-			message.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
-			message.setSubject(subject);
-			message.setText(body);
-		} catch (AddressException e) {
-			e.printStackTrace();
-		} catch (MessagingException e) {
-			e.printStackTrace();
-		}
-		
-		//message transport
-		try {
-			Transport.send(message);
-		} catch (MessagingException e) {
-			e.printStackTrace();
-		}
-		
-	}
-	
 	@Deprecated
 	//returns daily case data as integer from coronavirus.ohio.gov
 	private static int getCases() {
@@ -316,6 +331,48 @@ public class VirusUpdateDriver {
 			}
 		}
 		return cases;
+	}
+	
+	//sends email according to entered parameters
+	private static void sendEmail(String subject, String body, String emailFrom, String password, String emailTo) {
+		//set properties 
+		Properties props = new Properties();
+		props.put("mail.smtp.auth", "true");
+		props.put("mail.smtp.starttls.enable", "true");
+		props.put("mail.smtp.host", "smtp.gmail.com");
+		props.put("mail.smtp.port", "587");
+		props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+		props.put("mail.debug.auth", true);
+		props.put("mail.debug", true);
+		
+		//create session
+		Session session = Session.getInstance(props, new Authenticator() {
+			@Override
+			protected PasswordAuthentication getPasswordAuthentication() {
+				return new PasswordAuthentication(emailFrom, password);
+			}
+		});
+		
+		//create message
+		Message message = new MimeMessage(session);
+		try {
+			message.setFrom(new InternetAddress(emailFrom));
+			message.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
+			message.setSubject(subject);
+			message.setText(body);
+		} catch (AddressException e) {
+			e.printStackTrace();
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+		
+		//message transport
+		try {
+			Transport.send(message);
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+		
 	}
 	
 	@Deprecated
