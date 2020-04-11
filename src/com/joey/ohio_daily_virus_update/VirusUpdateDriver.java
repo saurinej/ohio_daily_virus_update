@@ -157,12 +157,20 @@ public class VirusUpdateDriver {
 				log.add(entry);
 				System.out.println("Update successful");
 			} else if (menuOption == 6) {
-				//find last regularly scheduled log item with a body and print log
-				for (int i = log.size() - 1; i > -1; i--) {
-					if (log.get(i).isScheduled()) {
-						System.out.println(log.get(i).getBody());
-					}
+				//first check if log is empty or null
+				if (!log.isEmpty() || log != null) {
+					//find last regularly scheduled log item with a body and print log
+					for (int i = log.size() - 1; i > -1; i--) {
+						if (log.get(i).isScheduled()) {
+							System.out.println(log.get(i).getBody());
+						}
+					} //end for loop
+				} else {
+					//log is empty or null
+					System.out.println("There is no previous email body to display.");
 				}
+				
+			
 			} else if (menuOption < 1 || menuOption > 6) {
 				System.out.println("Please enter a valid menu option.");
 			}
