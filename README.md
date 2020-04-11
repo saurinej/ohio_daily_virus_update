@@ -15,7 +15,11 @@ done in the relevant google account [security settings](https://myaccount.google
 
 ## Getting Started
 
+Once project has been imported into eclipse, export the project to a runnable jar file. Once exported, the program may be run through the command line.
 
+```
+$ java -jar "name_of_runnable_jar_file.jar"
+```
 
 ## Authors
 
@@ -27,4 +31,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* Thank you Ryan Farrar for your help and suggestions.
+* Thank you Stephen Mills and Ryan Farrar for your help and suggestions.
