@@ -1,5 +1,4 @@
 package com.joey.ohio_daily_virus_update;
-import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;

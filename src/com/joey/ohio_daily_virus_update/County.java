@@ -6,6 +6,8 @@ import java.util.Comparator;
 
 public class County implements Comparable<County>, Serializable {
 
+	private static final long serialVersionUID = -1951607041876942935L;
+	
 	private String name;
 	private ArrayList<CaseInstance> cases;
 	int count;

@@ -6,6 +6,8 @@ import java.util.GregorianCalendar;
 
 public class CustomGregorianCalendarComparator implements Comparator<GregorianCalendar>, Serializable {
 
+	private static final long serialVersionUID = -893072805876134852L;
+	
 	@Override
 	public int compare(GregorianCalendar cal1, GregorianCalendar cal2) {
 		

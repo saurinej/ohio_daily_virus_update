@@ -4,6 +4,8 @@ import java.util.GregorianCalendar;
 
 public class SingleDayCount implements Serializable {
 	
+	private static final long serialVersionUID = 2202847022941236630L;
+	
 	private GregorianCalendar date;
 	private int caseCount;
 	

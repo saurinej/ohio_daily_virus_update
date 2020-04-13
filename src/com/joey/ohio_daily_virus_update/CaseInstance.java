@@ -7,6 +7,8 @@ import java.util.Date;
 
 public class CaseInstance implements Serializable {
 	
+	private static final long serialVersionUID = -7897437942988507454L;
+	
 	private String sex;
 	private String ageRange;
 	private Date onsetDate;
