@@ -15,7 +15,13 @@ done in the relevant google account [security settings](https://myaccount.google
 
 ## Getting Started
 
-Once project has been imported into eclipse, export the project to a runnable jar file. Once exported, the program may be run through the command line.
+Once the project has been imported into eclipse, the path to the two external libraries must be reconfigured. This is done in eclipse through the 
+Libraries tab in the Java Build Path for the project. Further details on this can be found 
+[here](https://help.eclipse.org/2019-12/index.jsp?topic=%2Forg.eclipse.jdt.doc.user%2Freference%2Fref-properties-build-path.htm). 
+
+After being properly configured, Eclipse can be used to export the project to a runnable jar file. For instruction on this, see 
+[here](https://help.eclipse.org/2019-12/index.jsp?topic=%2Forg.eclipse.jdt.doc.user%2Ftasks%2Ftasks-37.htm). The program may be run through 
+the command line.
 
 ```
 $ java -jar "name_of_runnable_jar_file.jar"
