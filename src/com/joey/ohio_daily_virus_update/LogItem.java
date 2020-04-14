@@ -3,9 +3,15 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 
-import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
+
+/*
+ * Class to store any data update action performed in the program
+ * 
+ * Stores if it was scheduled or a manual update and if email was sent or not, as well as the session, message, body and date
+ * If it was a manual update only stores date, rest of the parameters will be null
+ */
 
 public class LogItem {
 	
@@ -27,26 +33,19 @@ public class LogItem {
 		setScheduled(false);
 	}
 	
+	//override toString() method to print out objects onto the console
 	@Override
 	public String toString() {
 		DateFormat format = new SimpleDateFormat("ddMMMyyyy HH:mm:ss");
 		if (scheduled) {
-			try {
-				if (sendSuccessful) {
-					return format.format(this.date.getTime()) + " - Message sent? " + sendSuccessful + ", Scheduled update? " + scheduled + ", Message Name: " + message.getFileName();
-				} else {
-					return format.format(this.date.getTime()) + " - Message sent?: " + sendSuccessful + ", Scheduled update? " + scheduled;
-				}
-				
-			} catch (MessagingException e) {
-				return format.format(this.date.getTime()) + " - Message sent?: " + sendSuccessful + ", Scheduled update? " + scheduled;
-			}
+			return format.format(this.date.getTime()) + " - Message sent?: " + sendSuccessful + ", Scheduled update? " + scheduled;
 		} else {
 			return format.format(this.date.getTime()) + " - Manual update? " + !scheduled;
 		}
 		
 	}
-
+	
+	//getters and setters
 	public GregorianCalendar getDate() {
 		return date;
 	}

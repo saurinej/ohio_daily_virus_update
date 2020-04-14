@@ -5,6 +5,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/*
+ * Class to store a single line of data in the CSV file from https://coronavirus.ohio.gov/static/COVIDSummaryData.csv
+ * Holds:
+ * sex, age range, onsetDate, deathDate, number of people that fit into these parameters (count),
+ * number of people with these parameters that died (deathCount), and the number of people in 
+ * these parameters that are hospitalized
+ */
 public class CaseInstance implements Serializable {
 	
 	private static final long serialVersionUID = -7897437942988507454L;
@@ -33,7 +40,9 @@ public class CaseInstance implements Serializable {
 		this.setHospitalizedCount(hospitalizedCount);
 	}
 	
+	//parses date from the CSV file
 	public Date parseDate(String date) {
+		//a blank date is an empty value, so null is returned
 		if(date.isBlank()) {
 			return null;
 		}
@@ -45,7 +54,9 @@ public class CaseInstance implements Serializable {
 			return null;
 		}
 	}
-
+	
+	
+	//the following are getters and setters for the class' parameters
 	public String getSex() {
 		return sex;
 	}

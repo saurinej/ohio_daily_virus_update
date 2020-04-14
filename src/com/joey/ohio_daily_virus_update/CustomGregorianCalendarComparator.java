@@ -4,6 +4,16 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.GregorianCalendar;
 
+/*
+ * Class to use as a comparator in a TreeMap that stores only one set of data per custom date range. 
+ * The date range is based off of the data updating everyday at 1400 hours EDT. The goal of this comparator
+ * is to store only one set of data per day cycle.
+ * 
+ * Compares GregorianCalendar objects so that if they are seen as equal if they are on the same day
+ * after 1400 hours or the next day before 1400 hours. Used in the TreeMap in Driver class so that no more than
+ * one object for a single day cycle can be stored in the map.
+ */
+
 public class CustomGregorianCalendarComparator implements Comparator<GregorianCalendar>, Serializable {
 
 	private static final long serialVersionUID = -893072805876134852L;

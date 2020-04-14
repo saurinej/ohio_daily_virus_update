@@ -4,6 +4,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 
+/*
+ * Class to store entire data set for a single county for a day's CSV file from https://coronavirus.ohio.gov/static/COVIDSummaryData.csv
+ * Holds:
+ * name of the county, ArrayList of the data in a single line of the CSV file, the total count for that county, the
+ * total number of deaths for a county, and the total hospitalized count for a county
+ */
+
 public class County implements Comparable<County>, Serializable {
 
 	private static final long serialVersionUID = -1951607041876942935L;

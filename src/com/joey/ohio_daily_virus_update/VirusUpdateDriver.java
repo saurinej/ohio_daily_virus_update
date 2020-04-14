@@ -214,6 +214,16 @@ public class VirusUpdateDriver {
 			}
 		}
 		
+		/*
+		 * Method to update what information is included in daily email body. Options are as follows:
+		 * Total case count for Ohio is default
+		 * Users may pick from counties stored in the latest day's data set (stored in static LinkedList variable counties)
+		 * Total count for counties are included if user decides to include any counties
+		 * User may pick to include hospitalized count for Ohio and counties or not (static boolean variable includeHospitalizedCount)
+		 * User may pick to include death count for Ohio and counties or not (static boolean variable includeDeathCount)
+		 * 
+		 *  These options are saved in static boolean variables and a LinkedList to hold county names
+		 */
 		private static void updateEmailBodyPreferences() {
 			
 			//automatically include total counts for all of Ohio
@@ -273,7 +283,17 @@ public class VirusUpdateDriver {
 			
 		}
 		
-		//method to form email body according to user preferences
+		/*
+		 * Method to form email body according to user preferences
+		 * 
+		 * Parameters are set by user to decide what data will be included in the updateEmailBodyPreferences() method.
+		 * Iterates through data structures and builds email body using StringBuilder
+		 * Returns a formated string representation of the data by day in following format:
+		 * "Day
+		 * 		Data for Day
+		 *  Day2
+		 *  	Data for Day2"
+		 */
 		private static String formEmailBody(boolean includeHospitalizedCount, boolean includeDeathCount, Queue<String> counties) {
 			
 			DateFormat dateFormat = new SimpleDateFormat("ddMMMyyyy");
@@ -348,7 +368,10 @@ public class VirusUpdateDriver {
 			return body.toString();
 		}
 		
-		//method to gather email address and password to send email and email address to send email to
+		/*
+		 * Method to gather email address and password to send email and email address to send email to
+		 * Modifies static String variables emailTo, password, and emailFrom
+		 */
 		private static void updateEmailInformation() {
 			//Gather email information from user
 			boolean verify = true;
@@ -376,7 +399,13 @@ public class VirusUpdateDriver {
 			} //end while loop
 		}
 		
-		//returns collection of data stored by county
+		/*
+		 * This method returns collection of data stored by county
+		 * Opens URL connection then gets input stream for csv file link for coronavirus.ohio.gov
+		 * parses data in through input stream
+		 * 
+		 * Method returns a TreeMap with county name as its key and County objects as values
+		 */
 		private static TreeMap<String, County> getDataFromCSV() {
 			
 			TreeMap<String, County> currentDayData = new TreeMap<>();
@@ -434,7 +463,15 @@ public class VirusUpdateDriver {
 			
 		}
 		
-		//sends email according to entered parameters
+		/*
+		 * This method sends email according to entered parameters
+		 * 
+		 * Sets relevant properties for email transport such as host, port, protocol usage, etc.
+		 * Creates a session with proper authentication method
+		 * Constructs the message 
+		 * Transports message
+		 * Updates LogItem variables 
+		 */
 		private static void sendEmail(String subject, String body, String emailFrom, String password, String emailTo, LogItem log) {
 			//set properties 
 			Properties props = new Properties();
@@ -472,19 +509,26 @@ public class VirusUpdateDriver {
 			
 			try {
 				Transport.send(message);
+				log.setSendSuccessful(true);
 			} catch (MessagingException e) {
-				e.printStackTrace();
+				log.setSendSuccessful(false);
 			}
 			
 			log.setBody(body);
 			log.setMessage((MimeMessage)message);
 			log.setSession(session);
-			log.setSendSuccessful(true);
+			
 			
 		}
 		
 		@Deprecated
-		//returns daily case data as integer from coronavirus.ohio.gov
+		/*
+		 * This method returns daily case data as an integer from coronavirus.ohio.gov.
+		 * 
+		 * Parses HTML file for specific tags the precede data
+		 * 
+		 * Deprecated.
+		 */
 		private static int getCases() {
 			URL url = null;
 			try {
@@ -543,7 +587,12 @@ public class VirusUpdateDriver {
 		}
 		
 		@Deprecated
-		//writes data to "tracker_data.txt" file according to format "ddMMMyyy~#"
+		/*
+		 * This method writes data to "tracker_data.txt" file according to format "ddMMMyyy~#"
+		 * Writes day with case data to text file.
+		 * 
+		 * Deprecated.
+		 */
 		private static void exit(TreeMap<Date, Integer> map) {
 			
 			try {
