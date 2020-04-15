@@ -45,7 +45,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 public class VirusUpdateDriver {
-	//data structures
+		//data structures
 		//holds complete data set parsed from the CSV file for every day starting 06Apr2020
 		private static TreeMap<GregorianCalendar, TreeMap<String, County>> dataByDay = new TreeMap<>(new CustomGregorianCalendarComparator());
 		//data recorded by older versions of the program, contains date and total case count for that date
