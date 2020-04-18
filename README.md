@@ -2,7 +2,8 @@
 
 A simple project with the purpose of providing daily updates on the number of confirmed cases of COVID-19 in Ohio through email. Data is gathered
 from the Ohio government's website through direct parsing from a link to a CSV file that contains the data for all cases in Ohio. Data is then 
-formatted and sent through an email using the Java Mail API.
+formatted and sent through an email using the Java Mail API. To see this project built with maven, see [this](https://github.com/saurinej/ohio_daily_virus_update_maven.git) 
+repository.
 
 ### Prerequisites
 
