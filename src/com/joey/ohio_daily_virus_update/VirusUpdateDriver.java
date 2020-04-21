@@ -420,6 +420,7 @@ public class VirusUpdateDriver {
 				 * CSV file formatted as follows:
 				 * first row: column titles
 				 * data: county, sex, age range, onset date, death date, case count, death count, hospitalized count
+				 * *see comment below for update made on 21Apr2020
 				 * last row: totals
 				 * so we must ignore the first and last lines during data collection from the CSV file
 				 */
@@ -437,9 +438,13 @@ public class VirusUpdateDriver {
 					String ageRange = s[2];
 					String onsetDate = s[3];
 					String deathDate = s[4];
-					int count = Integer.parseInt(s[5]);
-					int deathCount = Integer.parseInt(s[6]);
-					int hospitalizedCount = Integer.parseInt(s[7]);
+					/*
+					 * reporting of data in CSV file changed on 21Apr2020 to include admission date between death date and count 
+					 * this is ignored by shifting the index for the counts by positive one
+					 */
+					int count = Integer.parseInt(s[6]);
+					int deathCount = Integer.parseInt(s[7]);
+					int hospitalizedCount = Integer.parseInt(s[8]);
 					CaseInstance newCase = new CaseInstance(sex, ageRange, onsetDate, deathDate, count, deathCount, hospitalizedCount);
 					if (currentDayData.containsKey(countyName)) {
 						currentDayData.get(countyName).addCaseInstance(newCase);
